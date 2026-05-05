@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── DESIGN TOKENS ──────────────────────────────────────────────────────── */
+    :root {
+      --bg:          #0f0f0f;
+      --bg-card:     #161616;
+      --bg-hover:    #1d1d1d;
+      --border:      #2a2a2a;
+      --border-hi:   #3a3a3a;
+      --text-1:      #f0ede6;   /* warm white — main text */
+      --text-2:      #8a8580;   /* muted warm grey */
+      --text-3:      #4a4845;   /* very muted */
+
+      /* status accent colours */
+      --c-applied:   #4a7fa5;
+      --c-screening: #a07830;
+      --c-interview: #7060c8;
+      --c-offer:     #3a9070;
+      --c-rejected:  #8f3535;
+
+      --c-applied-bg:   rgba(74,127,165,.12);
+      --c-screening-bg: rgba(160,120,48,.12);
+      --c-interview-bg: rgba(112,96,200,.12);
+      --c-offer-bg:     rgba(58,144,112,.12);
+      --c-rejected-bg:  rgba(143,53,53,.12);
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-mono:    'DM Mono', 'Courier New', monospace;
+      --radius:       10px;
+      --transition:   160ms ease;
+    }
+
+    /* ─── RESET & BASE ───────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      min-height: 100vh;
+      /* subtle grid texture */
+      background-image:
+        linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────────────────────────── */
+    header {
+      padding: 2rem 2.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .header-left h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 300;
+      font-style: italic;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      line-height: 1;
+    }
+
+    .header-left p {
+      margin-top: 6px;
+      color: var(--text-2);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ─── BUTTONS ────────────────────────────────────────────────────────────── */
+    button {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: pointer;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-2);
+      padding: 7px 14px;
+      transition: color var(--transition), border-color var(--transition), background var(--transition);
+      letter-spacing: 0.03em;
+    }
+    button:hover { color: var(--text-1); border-color: var(--text-3); background: var(--bg-hover); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    button.primary {
+      background: var(--text-1);
+      color: var(--bg);
+      border-color: var(--text-1);
+      font-weight: 500;
+    }
+    button.primary:hover { opacity: .85; }
+
+    /* ─── STATS BAR ──────────────────────────────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 0;
+      padding: 1rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      padding: 0.4rem 1.4rem 0.4rem 0;
+      margin-right: 1.4rem;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .stat:last-child { border-right: none; }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 300;
+      line-height: 1;
+      color: var(--text-1);
+    }
+    .stat-label { color: var(--text-2); font-size: 11px; margin-top: 4px; letter-spacing: 0.05em; }
+
+    /* ─── FILTER ROW ─────────────────────────────────────────────────────────── */
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      padding: 1rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: 0.04em;
+    }
+    .filter-pill:hover { border-color: var(--border-hi); color: var(--text-1); }
+    .filter-pill.active-applied   { background: var(--c-applied-bg);   color: #7ab0d4; border-color: rgba(74,127,165,.3); }
+    .filter-pill.active-screening { background: var(--c-screening-bg); color: #c9a35c; border-color: rgba(160,120,48,.3); }
+    .filter-pill.active-interview { background: var(--c-interview-bg); color: #9d8fe0; border-color: rgba(112,96,200,.3); }
+    .filter-pill.active-offer     { background: var(--c-offer-bg);     color: #5abfa0; border-color: rgba(58,144,112,.3); }
+    .filter-pill.active-rejected  { background: var(--c-rejected-bg);  color: #c26060; border-color: rgba(143,53,53,.3); }
+    .filter-pill.active-all       { background: var(--bg-hover); color: var(--text-1); border-color: var(--border-hi); }
+
+    /* ─── MAIN BOARD ─────────────────────────────────────────────────────────── */
+    main { padding: 1.5rem 2.5rem 3rem; }
+
+    /* ─── TABLE VIEW ─────────────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 0 14px 10px;
+      color: var(--text-3);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    tbody tr:hover { background: var(--bg-hover); }
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td {
+      padding: 13px 14px;
+      color: var(--text-2);
+      vertical-align: middle;
+    }
+
+    td.td-company { color: var(--text-1); font-weight: 500; }
+    td.td-role    { color: var(--text-2); }
+    td.td-date    { color: var(--text-3); white-space: nowrap; }
+
+    /* ─── STATUS BADGE ───────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-weight: 500;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+    .badge-applied   { background: var(--c-applied-bg);   color: #7ab0d4; }
+    .badge-applied::before   { background: var(--c-applied); }
+    .badge-screening { background: var(--c-screening-bg); color: #c9a35c; }
+    .badge-screening::before { background: var(--c-screening); }
+    .badge-interview { background: var(--c-interview-bg); color: #9d8fe0; }
+    .badge-interview::before { background: var(--c-interview); }
+    .badge-offer     { background: var(--c-offer-bg);     color: #5abfa0; }
+    .badge-offer::before     { background: var(--c-offer); }
+    .badge-rejected  { background: var(--c-rejected-bg);  color: #c26060; }
+    .badge-rejected::before  { background: var(--c-rejected); }
+
+    /* ─── REMINDER CHIP ──────────────────────────────────────────────────────── */
+    .reminder-chip {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(112,96,200,.18);
+      color: #9d8fe0;
+      margin-left: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ─── EMPTY STATE ────────────────────────────────────────────────────────── */
+    .empty {
+      padding: 5rem 0;
+      text-align: center;
+      color: var(--text-3);
+    }
+    .empty p { margin-bottom: 6px; }
+    .empty .big { font-family: var(--font-display); font-size: 2rem; font-style: italic; font-weight: 300; color: var(--text-2); }
+
+    /* ─── CONFIG OVERLAY ─────────────────────────────────────────────────────── */
+    .overlay-bg {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .overlay-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hi);
+      border-radius: 16px;
+      padding: 2rem;
+      width: min(480px, 90vw);
+    }
+    .overlay-box h2 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+    .overlay-box p { color: var(--text-2); font-size: 12px; line-height: 1.6; margin-bottom: 1.2rem; }
+    .overlay-box label { display: block; color: var(--text-2); font-size: 11px; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .overlay-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-1);
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .overlay-box input:focus { border-color: var(--text-3); }
+    .overlay-note {
+      font-size: 11px;
+      color: var(--text-3);
+      line-height: 1.6;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1.2rem;
+    }
+    .overlay-note code { color: var(--text-2); }
+    .overlay-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ─── STATUS DOT (live indicator) ───────────────────────────────────────── */
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--c-offer);
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    /* ─── TOAST ──────────────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 2rem; right: 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      font-size: 12px;
+      color: var(--text-2);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ─── SCROLL ─────────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── HEADER ──────────────────────────────────────────────────────────── -->
+  <header>
+    <div class="header-left">
+      <h1>Job Applications</h1>
+      <p id="last-refresh">connect a Google Sheet to get started</p>
+    </div>
+    <div class="header-right">
+      <button id="btn-config">⚙ configure sheet</button>
+      <button id="btn-refresh" disabled>↻ refresh</button>
+    </div>
+  </header>
+
+  <!-- ─── STATS ────────────────────────────────────────────────────────────── -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat"><span class="stat-num" id="stat-total">—</span><span class="stat-label">total</span></div>
+    <div class="stat"><span class="stat-num" id="stat-active">—</span><span class="stat-label">active</span></div>
+    <div class="stat"><span class="stat-num" id="stat-interview">—</span><span class="stat-label">interviews</span></div>
+    <div class="stat"><span class="stat-num" id="stat-offer">—</span><span class="stat-label">offers</span></div>
+  </div>
+
+  <!-- ─── FILTERS ──────────────────────────────────────────────────────────── -->
+  <div class="filter-row">
+    <button class="filter-pill active-all" data-filter="all">all</button>
+    <button class="filter-pill" data-filter="applied">applied</button>
+    <button class="filter-pill" data-filter="screening">screening</button>
+    <button class="filter-pill" data-filter="interview">interview</button>
+    <button class="filter-pill" data-filter="offer">offer</button>
+    <button class="filter-pill" data-filter="rejected">rejected</button>
+  </div>
+
+  <!-- ─── TABLE ────────────────────────────────────────────────────────────── -->
+  <main>
+    <div class="table-wrap">
+      <table id="jobs-table">
+        <thead>
+          <tr>
+            <th>company</th>
+            <th>role</th>
+            <th>status</th>
+            <th>applied</th>
+            <th>interview</th>
+            <th>last updated</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-body">
+          <tr>
+            <td colspan="6">
+              <div class="empty">
+                <p class="big">nothing yet</p>
+                <p>click <em>configure sheet</em> to connect your Google Sheet</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- ─── CONFIG OVERLAY ───────────────────────────────────────────────────── -->
+  <div class="overlay-bg" id="overlay" style="display:none">
+    <div class="overlay-box">
+      <h2>Connect your sheet</h2>
+      <p>
+        The dashboard reads your job applications directly from Google Sheets.
+        You need two things: your Sheet ID and a Sheets API key.
+      </p>
+
+      <label>SHEET ID</label>
+      <input id="input-sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+
+      <label>GOOGLE SHEETS API KEY</label>
+      <input id="input-api-key" placeholder="AIzaSy..." type="password" />
+
+      <div class="overlay-note">
+        <strong style="color: var(--text-2)">Finding your Sheet ID:</strong><br/>
+        It's in the URL: <code>docs.google.com/spreadsheets/d/<strong>THIS_PART</strong>/edit</code>
+        <br/><br/>
+        <strong style="color: var(--text-2)">Getting an API key:</strong><br/>
+        console.cloud.google.com → APIs &amp; Services → Credentials → Create API key.
+        Enable the Google Sheets API. Restrict the key to Sheets API only.
+        <br/><br/>
+        These values are saved in your browser only. Never sent anywhere else.
+      </div>
+
+      <div class="overlay-actions">
+        <button id="btn-cancel">cancel</button>
+        <button id="btn-connect" class="primary">connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TOAST ────────────────────────────────────────────────────────────── -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ─── JAVASCRIPT ────────────────────────────────────────────────────────── -->
+  <script>
+    // ─── CONFIG ───────────────────────────────────────────────────────────────
+    // Sheet ID and API key are stored in localStorage (browser only).
+    // They're never sent to any server — only to the Google Sheets API directly.
+    // The agent writes to the sheet; this dashboard only reads it.
+
+    const LS_SHEET = 'jt_sheet_id';
+    const LS_KEY   = 'jt_api_key';
+
+    const STATUSES = ['applied','screening','interview','offer','rejected'];
+
+    // Column order must match sheets_setup.md exactly
+    const COL = {
+      id:          0,
+      company:     1,
+      role:        2,
+      status:      3,
+      applied:     4,
+      interview:   5,
+      updated:     6,
+      notified:    7,
+      source:      8,
+    };
+
+    // ─── STATE ────────────────────────────────────────────────────────────────
+    let allRows   = [];    // all rows loaded from the sheet
+    let activeFilter = 'all';
+
+    // ─── ELEMENTS ─────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const overlay     = $('overlay');
+    const btnConfig   = $('btn-config');
+    const btnRefresh  = $('btn-refresh');
+    const btnConnect  = $('btn-connect');
+    const btnCancel   = $('btn-cancel');
+    const inputSheet  = $('input-sheet-id');
+    const inputKey    = $('input-api-key');
+    const jobsBody    = $('jobs-body');
+    const lastRefresh = $('last-refresh');
+    const toast       = $('toast');
+
+    // ─── TOAST ────────────────────────────────────────────────────────────────
+    // Shows a non-blocking status message in the bottom-right corner.
+    // Fades out after 3 seconds automatically.
+    let toastTimer;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ─── FORMAT HELPERS ───────────────────────────────────────────────────────
+    function formatDate(str) {
+      if (!str) return '—';
+      try {
+        const d = new Date(str);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch { return str; }
+    }
+
+    function daysUntil(dateStr) {
+      if (!dateStr) return null;
+      const diff = new Date(dateStr) - new Date();
+      return Math.ceil(diff / 86400000);
+    }
+
+    // ─── BADGE HTML ───────────────────────────────────────────────────────────
+    // Returns the coloured status pill HTML for a given status string.
+    function badgeHTML(status) {
+      const s = (status || '').toLowerCase();
+      return `<span class="badge badge-${s}">${s}</span>`;
+    }
+
+    // ─── STATS ────────────────────────────────────────────────────────────────
+    // Recalculates the four summary numbers at the top.
+    function updateStats(rows) {
+      const total     = rows.length;
+      const active    = rows.filter(r => !['rejected','offer'].includes(r[COL.status])).length;
+      const interviews = rows.filter(r => r[COL.status] === 'interview').length;
+      const offers    = rows.filter(r => r[COL.status] === 'offer').length;
+
+      $('stat-total').textContent     = total     || '0';
+      $('stat-active').textContent    = active    || '0';
+      $('stat-interview').textContent = interviews || '0';
+      $('stat-offer').textContent     = offers    || '0';
+    }
+
+    // ─── RENDER TABLE ─────────────────────────────────────────────────────────
+    // Takes the filtered rows and builds the table HTML.
+    // Why rebuild innerHTML each time? For a dataset this size (<1000 rows),
+    // it's simpler and fast enough. A production app would use virtual DOM.
+    function renderTable(rows) {
+      if (!rows.length) {
+        jobsBody.innerHTML = `
+          <tr><td colspan="6">
+            <div class="empty">
+              <p class="big">nothing here</p>
+              <p>no applications match this filter</p>
+            </div>
+          </td></tr>`;
+        return;
+      }
+
+      // Sort by last_updated descending (most recent first)
+      const sorted = [...rows].sort((a, b) =>
+        (b[COL.updated] || '').localeCompare(a[COL.updated] || '')
+      );
+
+      jobsBody.innerHTML = sorted.map(row => {
+        const status     = (row[COL.status] || '').toLowerCase();
+        const intDate    = row[COL.interview];
+        const days       = daysUntil(intDate);
+        const isUpcoming = days !== null && days >= 0 && days <= 3;
+
+        // Show a reminder chip if interview is within 3 days
+        const reminderChip = isUpcoming
+          ? `<span class="reminder-chip">${days === 0 ? 'today!' : `in ${days}d`}</span>`
+          : '';
+
+        return `<tr>
+          <td class="td-company">${row[COL.company] || '—'}</td>
+          <td class="td-role">${row[COL.role] || '—'}</td>
+          <td>${badgeHTML(status)}${reminderChip}</td>
+          <td class="td-date">${formatDate(row[COL.applied])}</td>
+          <td class="td-date">${intDate ? formatDate(intDate) : '—'}</td>
+          <td class="td-date">${formatDate(row[COL.updated])}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ─── FILTER ───────────────────────────────────────────────────────────────
+    // Filters allRows by status and re-renders. Does not re-fetch from Sheets.
+    function applyFilter(f) {
+      activeFilter = f;
+
+      // Update pill active states
+      document.querySelectorAll('.filter-pill').forEach(p => {
+        const pf = p.dataset.filter;
+        p.className = 'filter-pill';
+        if (pf === f) p.classList.add(`active-${f}`);
+      });
+
+      const filtered = f === 'all' ? allRows : allRows.filter(r => r[COL.status] === f);
+      renderTable(filtered);
+    }
+
+    // ─── FETCH FROM GOOGLE SHEETS ─────────────────────────────────────────────
+    // Calls the Google Sheets API v4 (read-only — this dashboard never writes).
+    // The API returns a `values` array where each element is a row (array of cells).
+    // Row 0 is the header — we skip it and process from row 1 onwards.
+    async function fetchSheet() {
+      const sheetId = localStorage.getItem(LS_SHEET);
+      const apiKey  = localStorage.getItem(LS_KEY);
+
+      if (!sheetId || !apiKey) {
+        showOverlay();
+        return;
+      }
+
+      btnRefresh.disabled = true;
+      btnRefresh.textContent = '↻ loading…';
+
+      try {
+        // The Sheets API URL structure:
+        // /v4/spreadsheets/{sheetId}/values/{range}?key={apiKey}
+        // 'Applications!A:I' means: sheet named "Applications", columns A through I
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Applications!A:I?key=${apiKey}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const values = data.values || [];
+
+        // Skip header row (index 0), keep data rows
+        allRows = values.slice(1).filter(row => row.length > 1);
+
+        updateStats(allRows);
+        applyFilter(activeFilter);
+
+        const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        lastRefresh.innerHTML = `<span class="live-dot"></span>last synced ${now} · ${allRows.length} applications`;
+
+        showToast(`loaded ${allRows.length} applications`);
+
+      } catch (err) {
+        showToast(`error: ${err.message}`);
+        lastRefresh.textContent = `error loading sheet — check config`;
+      } finally {
+        btnRefresh.disabled = false;
+        btnRefresh.textContent = '↻ refresh';
+      }
+    }
+
+    // ─── CONFIG OVERLAY ───────────────────────────────────────────────────────
+    function showOverlay() {
+      inputSheet.value = localStorage.getItem(LS_SHEET) || '';
+      inputKey.value   = localStorage.getItem(LS_KEY)   || '';
+      overlay.style.display = 'flex';
+    }
+
+    function hideOverlay() {
+      overlay.style.display = 'none';
+    }
+
+    // ─── EVENT LISTENERS ──────────────────────────────────────────────────────
+    btnConfig.addEventListener('click', showOverlay);
+    btnCancel.addEventListener('click', hideOverlay);
+    btnRefresh.addEventListener('click', fetchSheet);
+
+    btnConnect.addEventListener('click', () => {
+      const sheetId = inputSheet.value.trim();
+      const apiKey  = inputKey.value.trim();
+
+      if (!sheetId || !apiKey) {
+        showToast('both fields required');
+        return;
+      }
+
+      // Save to localStorage — browser only, never transmitted
+      localStorage.setItem(LS_SHEET, sheetId);
+      localStorage.setItem(LS_KEY, apiKey);
+
+      hideOverlay();
+      fetchSheet();
+    });
+
+    // Filter pills
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.addEventListener('click', () => applyFilter(pill.dataset.filter));
+    });
+
+    // Close overlay on background click
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) hideOverlay();
+    });
+
+    // ─── INIT ─────────────────────────────────────────────────────────────────
+    // On page load: if credentials already saved, fetch immediately.
+    // Otherwise, show the config overlay.
+    (function init() {
+      const hasConfig = localStorage.getItem(LS_SHEET) && localStorage.getItem(LS_KEY);
+      if (hasConfig) {
+        btnRefresh.disabled = false;
+        fetchSheet();
+      } else {
+        showOverlay();
+      }
+    })();
+  </script>
+
+</body>
+</html>
