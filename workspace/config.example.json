@@ -1,0 +1,25 @@
+{
+  "_comment": "Copy this file to config.json and fill in your real values. Never commit config.json.",
+
+  "google_sheets": {
+    "sheet_id": "YOUR_GOOGLE_SHEET_ID_HERE",
+    "sheet_name": "Applications",
+    "_comment": "sheet_id is in the URL: docs.google.com/spreadsheets/d/THIS_PART/edit"
+  },
+
+  "gmail": {
+    "search_query": "application OR interview OR offer OR rejection OR recruiter",
+    "max_results": 30
+  },
+
+  "notifications": {
+    "platform": "telegram",
+    "_comment": "platform options: telegram, whatsapp, slack",
+    "interview_reminder_days": 3
+  },
+
+  "heartbeat": {
+    "interval_minutes": 120,
+    "_comment": "How often the agent checks Gmail. 120 = every 2 hours."
+  }
+}

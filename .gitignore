@@ -1,0 +1,32 @@
+# ─── SECRETS — never commit these ────────────────────────────────────────────
+# The real config has your Google Sheet ID and API credentials.
+# config.example.json (the template) IS committed. config.json is NOT.
+workspace/config.json
+
+# Any .env files if you move to environment variables later
+.env
+.env.local
+.env.*
+
+# ─── OPENCLAW RUNTIME ─────────────────────────────────────────────────────────
+# OpenClaw writes temporary files here during runs. Not source code.
+workspace/.claw_cache/
+workspace/logs/
+
+# ─── OS NOISE ─────────────────────────────────────────────────────────────────
+.DS_Store          # macOS folder metadata
+Thumbs.db          # Windows thumbnail cache
+Desktop.ini        # Windows folder settings
+
+# ─── EDITOR NOISE ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── PYTHON (for the dashboard server) ────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/

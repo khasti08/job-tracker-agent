@@ -1,0 +1,4 @@
+# Git doesn't track empty directories — only files.
+# This file exists solely to make Git include the workspace/ folder in the repo.
+# When you clone this project, workspace/ will exist and be ready for config.json.
+# You can delete this file once workspace/config.json exists.
