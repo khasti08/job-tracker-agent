@@ -31,3 +31,4 @@ __pycache__/
 venv/
 .venv/
 workspace/service-account.json
+.DS_Store
